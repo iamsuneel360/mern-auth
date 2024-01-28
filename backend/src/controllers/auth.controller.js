@@ -1,7 +1,9 @@
 const User = require("../models/user.modul.js");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+
 // const saltRounds = 10;
-const singup = async (req, res) => {
+const signup = async (req, res) => {
   try {
     const existingUser = await User.findOne({ email: req.body.email });
     if (existingUser) {
@@ -21,4 +23,29 @@ const singup = async (req, res) => {
   }
 };
 
-module.exports = singup;
+const signin = async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const validUser = await User.findOne({ email });
+    if (!validUser)
+      return res.status(403).json({
+        msg: "Email not found",
+      });
+    const validPassword = bcrypt.compareSync(password, validUser.password);
+    if (!validPassword)
+      return res.status(401).json({
+        msg: "Wrong credentials",
+      });
+    const token = jwt.sign({ id: validUser._id }, process.env.JWT_SECRET);
+    const { password: hashPassword, ...rest } = validUser._doc; // helps to remove password so that no one can findout
+    const expiryDate = new Date(Date.now() + 3600000);
+    res
+      .cookie("access_token", token, { httpOnly: true, expires: expiryDate })
+      .status(200)
+      .json(rest);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+module.exports = { signup, signin };
