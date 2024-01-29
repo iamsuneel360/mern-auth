@@ -1,16 +1,18 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { useState } from "react";
 
 const signUp = () => {
+  const router = useRouter();
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // cancel the browser refresh
 
     setLoading(true);
     const res = await fetch("http://localhost:9000/signup", {
@@ -21,6 +23,11 @@ const signUp = () => {
       body: JSON.stringify(formData),
     });
     const data = await res.json();
+
+    if (res.status == 201) {
+      router.push("/signin");
+    }
+
     toast(data.msg);
     setLoading(false);
   };
